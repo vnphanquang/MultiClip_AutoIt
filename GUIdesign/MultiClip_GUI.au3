@@ -1,4 +1,3 @@
-
 #include <StaticConstants.au3>
 #include <ButtonConstants.au3>
 #include <EditConstants.au3>
@@ -280,7 +279,7 @@ Func quickGUI()
 	Local $smAbout = GUICtrlCreateMenuItem("&About", $mHelp)
 
 	Global $tqClip = GUICtrlCreateEdit("", 80, 8, 139, 17, BitOR($ES_AUTOVSCROLL, $ES_AUTOHSCROLL, $ES_WANTRETURN))
-	GUICtrlSetFont(-1, 8, 400, 2, "MS Sans Serif")
+	GUICtrlSetFont(-1, 8, 400, "MS Sans Serif")
 
 	Local $gCycle = GUICtrlCreateGroup("Cycle", 56, 32, 65, 49)
 	Global $rqCycle = GUICtrlCreateRadio("I", 64, 48, 25, 25, BitOR($GUI_SS_DEFAULT_RADIO, $BS_PUSHLIKE))
@@ -304,7 +303,7 @@ Func quickGUI()
 	GUICtrlSetTip(-1, "Press to increment clip by 1")
 
 	refreshQuickGUI()
-	
+
 	GUISetState(@SW_SHOW)
 	#EndRegion ### END Koda GUI section ###
 
@@ -325,15 +324,15 @@ Func quickGUI()
 
 			Case $smBack
 				GUIDelete()
-				GUISetState(@SW_SHOW, $Main)
+				GUISetState(@SW_SHOWNA, $Main)
 				refreshMainGUI()
 				Return
 
 			Case $bClipMinus
-				moveClipIndex(+1)
+				moveClipIndex(-1)
 
 			Case $bClipPlus
-				moveClipIndex(-1)
+				moveClipIndex(+1)
 
 			Case $tqClip
 				$multiClip[$clipIndex] = GUICtrlRead($tqClip)
@@ -392,7 +391,7 @@ Func hot_selectClip1()
 			GUICtrlSetState($rClip[$clipIndex], $GUI_CHECKED)
 		Else
 			GUICtrlSetData($lqClip, $clipIndex + 1)
-			GUICtrlSetData(&tqClip, $multiClip[$clipIndex])
+			GUICtrlSetData($tqClip, $multiClip[$clipIndex])
 		EndIf
 
 		If ($stepMode = $UNACTIVE) Then
@@ -419,7 +418,7 @@ Func hot_selectClip2()
 			GUICtrlSetState($rClip[$clipIndex], $GUI_CHECKED)
 		Else
 			GUICtrlSetData($lqClip, $clipIndex + 1)
-			GUICtrlSetData(&tqClip, $multiClip[$clipIndex])
+			GUICtrlSetData($tqClip, $multiClip[$clipIndex])
 		EndIf
 
 		If ($stepMode = $UNACTIVE) Then
@@ -445,7 +444,7 @@ Func hot_selectClip3()
 			GUICtrlSetState($rClip[$clipIndex], $GUI_CHECKED)
 		Else
 			GUICtrlSetData($lqClip, $clipIndex + 1)
-			GUICtrlSetData(&tqClip, $multiClip[$clipIndex])
+			GUICtrlSetData($tqClip, $multiClip[$clipIndex])
 		EndIf
 
 		If ($stepMode = $UNACTIVE) Then
@@ -472,7 +471,7 @@ Func hot_selectClip4()
 			GUICtrlSetState($rClip[$clipIndex], $GUI_CHECKED)
 		Else
 			GUICtrlSetData($lqClip, $clipIndex + 1)
-			GUICtrlSetData(&tqClip, $multiClip[$clipIndex])
+			GUICtrlSetData($tqClip, $multiClip[$clipIndex])
 		EndIf
 
 		If ($stepMode = $UNACTIVE) Then
@@ -498,7 +497,7 @@ Func hot_selectClip5()
 			GUICtrlSetState($rClip[$clipIndex], $GUI_CHECKED)
 		Else
 			GUICtrlSetData($lqClip, $clipIndex + 1)
-			GUICtrlSetData(&tqClip, $multiClip[$clipIndex])
+			GUICtrlSetData($tqClip, $multiClip[$clipIndex])
 		EndIf
 
 		If ($stepMode = $UNACTIVE) Then
@@ -546,17 +545,17 @@ Func refreshMainGUI()
 	Else
 		GUICtrlSetState($rPaste, $GUI_CHECKED)
 	EndIf
-	
+
 	If ($stepMode = $ACTIVE) Then
 		GUICtrlSetState($rCycle, $GUI_CHECKED)
 	Else
 		GUICtrlSetState($rSelection, $GUI_CHECKED)
 	EndIf
-	
+
 	For $i = 0 To 4 Step +1
 		GUICtrlSetData($tClip[$i], $multiClip[$i])
 	Next
-	
+
 	GUICtrlSetState($rClip[$clipIndex], $GUI_CHECKED)
 
 EndFunc   ;==>refreshMainGUI
@@ -568,14 +567,14 @@ Func refreshQuickGUI()
 	Else
 		GUICtrlSetState($rqPaste, $GUI_CHECKED)
 	EndIf
-	
+
 	If ($stepMode = $ACTIVE) Then
 		GUICtrlSetState($rqCycle, $GUI_CHECKED)
 	Else
 		GUICtrlSetState($rqSelection, $GUI_CHECKED)
 	EndIf
-	
-	GUICtrlSetState($lqClip, $clipIndex)
+
+	GUICtrlSetData($lqClip, $clipIndex + 1)
 	GUICtrlSetData($tqClip, $multiClip[$clipIndex])
 
 EndFunc   ;==>refreshQuickGUI
@@ -592,7 +591,7 @@ Func copy()
 		GUICtrlSetState($rClip[$clipIndex], $GUI_CHECKED)
 		GUICtrlSetData($tClip[$clipIndex], $multiClip[$clipIndex])
 	Else
-		GUICtrlSetState($lqClip, $clipIndex + 1)
+		GUICtrlSetData($lqClip, $clipIndex + 1)
 		GUICtrlSetData($tqClip, $multiClip[$clipIndex])
 	EndIf
 
@@ -625,10 +624,12 @@ EndFunc   ;==>pasteStep
 
 Func moveClipIndex($step)
 
-	If ($clipIndex = $CLIPSIZE) Then
+	If ($clipIndex + 1 = $CLIPSIZE And $step = +1) Then
 		$clipIndex = 0
+	ElseIf ($clipIndex - 1 = -1 And $step = -1) Then
+		$clipIndex = 4
 	Else
-		$clipIndex += step
+		$clipIndex += $step
 	EndIf
 
 	If ($multiClipState[$clipIndex] = $UNACTIVE) Then
@@ -639,16 +640,16 @@ Func moveClipIndex($step)
 		EndIf
 
 	EndIf
-	
+
 	If BitAND(WinGetState("MultiClip -Clipboard Manager"), $WIN_STATE_VISIBLE) Then
 		GUICtrlSetState($rClip[$clipIndex], $GUI_CHECKED)
-	Else	
-		GUICtrlSetState($lqClip, $clipIndex + 1)
+	Else
+		GUICtrlSetData($lqClip, $clipIndex + 1)
 		GUICtrlSetData($tqClip, $multiClip[$clipIndex])
 	EndIf
 
 	Return $clipIndex
-	
+
 EndFunc   ;==>moveClipIndex
 
 Func isActiveClipboard()
@@ -685,4 +686,3 @@ Func checkState() ;Debugging helpers
 
 EndFunc   ;==>checkState
 ;---------------------------------------------------------HELPERS---------------------------------------------------------
-
