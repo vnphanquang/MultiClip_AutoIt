@@ -14,6 +14,11 @@ HotKeySet('^3', 'hot_selectClip3')
 HotKeySet('^4', 'hot_selectClip4')
 HotKeySet('^5', 'hot_selectClip5')
 
+Global Const $STEP_ON_INSTRUCTION = "Press ""Cycle"" to enable Cycle Mode." & @CRLF & @CRLF & "Press ""CTRL + INSERT"" to toggle between Copy & Paste mode" & @CRLF & @CRLF & "Press ""Insert"" to either copy or paste, depeding on the mode you're in."
+Global Const $STEP_OFF_INSTRUCTION = "Press ""CTRL + INSERT"" to toggle between Copy & Paste mode" & @CRLF & @CRLF & "Press ""Ctrl + NUMBER"" to copy/paste, where NUMBER is 1,2,3,4, or 5."
+Global Const $UNACTIVE_CLIP_MESSAGE = "Caution: chosen clip is unactive." & @CRLF & "Copy into clip or check the ""Active"" box to make it active!"
+Global Const $UNACTIVE_CLIP_HOTKEY_MESSAGE = "Chosen clip is unactive. Please pick another clip!"
+
 Global Const $WIN_STATE_VISIBLE = 2
 Global Const $COPY_MODE = 0
 Global Const $PASTE_MODE = 1
@@ -22,13 +27,11 @@ Global Const $UNACTIVE = 0
 
 Global Const $CLIPSIZE = 5
 
-Global Const $STEP_ON_INSTRUCTION = "Press ""Cycle"" to enable Cycle Mode." & @CRLF & @CRLF & "Press ""CTRL + INSERT"" to toggle between Copy & Paste mode" & @CRLF & @CRLF & "Press ""Insert"" to either copy or paste, depeding on the mode you're in."
-Global Const $STEP_OFF_INSTRUCTION = "Press ""CTRL + INSERT"" to toggle between Copy & Paste mode" & @CRLF & @CRLF & "Press ""Ctrl + NUMBER"" to copy/paste, where NUMBER is 1,2,3,4, or 5."
-Global Const $UNACTIVE_CLIP_MESSAGE = "Caution: chosen clip is unactive." & @CRLF & "Copy into clip or check the ""Active"" box to make it active!"
-Global Const $UNACTIVE_CLIP_HOTKEY_MESSAGE = "Chosen clip is unactive. Please pick another clip!"
-
 Global $clipMode = $COPY_MODE
 Global $stepMode = $ACTIVE
+
+Global $switchMode = $UNACTIVE
+Global $switchIndex
 
 Global $multiClip[$CLIPSIZE + 1]
 Global $multiClipState[$CLIPSIZE + 1]
@@ -46,7 +49,7 @@ Func main()
 
 	mainGUI()
 
-	;infinite loop, press ESC to exit
+	;infinite loop, press ESC or click on x on GUI to exit
 	While 1
 		Sleep(50)
 	WEnd
@@ -124,9 +127,9 @@ Func mainGUI()
 
 	GUICtrlCreateGroup("", -99, -99, 1, 1)
 	Global $modeGroup = GUICtrlCreateGroup("", 7, 24, 345, 57, BitOR($GUI_SS_DEFAULT_GROUP, $BS_CENTER))
-	Global $rCycle = GUICtrlCreateRadio("Cycle", 47, 48, 113, 17, BitOR($GUI_SS_DEFAULT_RADIO, $BS_PUSHLIKE))
+	Global $rStepOn = GUICtrlCreateRadio("ON", 47, 48, 113, 17, BitOR($GUI_SS_DEFAULT_RADIO, $BS_PUSHLIKE))
 	GUICtrlSetState(-1, $GUI_CHECKED)
-	Global $rSelection = GUICtrlCreateRadio("Selection", 199, 48, 113, 17, BitOR($GUI_SS_DEFAULT_RADIO, $BS_PUSHLIKE))
+	Global $rStepOff = GUICtrlCreateRadio("OFF", 199, 48, 113, 17, BitOR($GUI_SS_DEFAULT_RADIO, $BS_PUSHLIKE))
 	GUICtrlCreateGroup("", -99, -99, 1, 1)
 	Global $bInstructions = GUICtrlCreateButton("Instructions", 138, 96, 83, 25)
 	GUISetState(@SW_SHOW)
@@ -151,17 +154,19 @@ Func mainGUI()
 				GUISetState(@SW_HIDE, $Main)
 				quickGUI()
 
-			Case $rCycle
+			Case $rStepOn
 				$stepMode = $ACTIVE
-
-			Case $rSelection
+				GUICtrlSetState($rStepOn, $GUI_CHECKED)
+				
+			Case $rStepOff
 				$stepMode = $UNACTIVE
+				GUICtrlSetState($rStepOff, $GUI_CHECKED)
 
 			Case $bInstructions
 				If ($stepMode = $ACTIVE) Then
-					MsgBox(0, "Instructions (Cycle Mode)", $STEP_ON_INSTRUCTION)
+					MsgBox(0, "Instructions (Cycle ON)", $STEP_ON_INSTRUCTION)
 				Else
-					MsgBox(0, "Instructions (Selection Mode)", $STEP_OFF_INSTRUCTION)
+					MsgBox(0, "Instructions (Cycle OFF)", $STEP_OFF_INSTRUCTION)
 				EndIf
 
 			Case $rCopy
@@ -202,7 +207,7 @@ Func mainGUI()
 				Else
 					$multiClipState[0] = $UNACTIVE
 					If ($clipIndex = 0) Then
-						moveClipIndex(+1)
+						moveIndex()
 					EndIf
 				EndIf
 			Case $cClip[1]
@@ -211,7 +216,7 @@ Func mainGUI()
 				Else
 					$multiClipState[1] = $UNACTIVE
 					If ($clipIndex = 1) Then
-						moveClipIndex(+1)
+						moveClipIndex()
 					EndIf
 				EndIf
 			Case $cClip[2]
@@ -220,7 +225,7 @@ Func mainGUI()
 				Else
 					$multiClipState[2] = $UNACTIVE
 					If ($clipIndex = 2) Then
-						moveClipIndex(+1)
+						moveClipIndex()
 					EndIf
 				EndIf
 			Case $cClip[3]
@@ -229,7 +234,7 @@ Func mainGUI()
 				Else
 					$multiClipState[3] = $UNACTIVE
 					If ($clipIndex = 3) Then
-						moveClipIndex(+1)
+						moveClipIndex()
 					EndIf
 				EndIf
 			Case $cClip[4]
@@ -238,7 +243,7 @@ Func mainGUI()
 				Else
 					$multiClipState[4] = $UNACTIVE
 					If ($clipIndex = 4) Then
-						moveClipIndex(+1)
+						moveClipIndex()
 					EndIf
 				EndIf
 
@@ -282,8 +287,7 @@ Func quickGUI()
 	GUICtrlSetFont(-1, 8, 400, "MS Sans Serif")
 
 	Local $gCycle = GUICtrlCreateGroup("Cycle", 56, 32, 65, 49)
-	Global $rqCycle = GUICtrlCreateRadio("I", 64, 48, 25, 25, BitOR($GUI_SS_DEFAULT_RADIO, $BS_PUSHLIKE))
-	Global $rqSelection = GUICtrlCreateRadio("0", 88, 48, 25, 25, BitOR($GUI_SS_DEFAULT_RADIO, $BS_PUSHLIKE))
+	
 	GUICtrlCreateGroup("", -99, -99, 1, 1)
 
 	Local $gMode = GUICtrlCreateGroup("Mode", 152, 31, 65, 49)
@@ -293,14 +297,6 @@ Func quickGUI()
 
 	Global $lqClip = GUICtrlCreateLabel("1", 52, 5, 25, 25, BitOR($SS_CENTER, $SS_CENTERIMAGE), $WS_EX_STATICEDGE)
 	GUICtrlSetFont(-1, 10, 400, 0, "MS Sans Serif")
-
-	Local $bClipPlus = GUICtrlCreateButton("+", 8, 0, 41, 41, $BS_CENTER)
-	GUICtrlSetFont(-1, 25, 400, 0, "MS Sans Serif")
-	GUICtrlSetTip(-1, "Press to decrement clip by 1")
-
-	Local $bClipMinus = GUICtrlCreateButton("-", 8, 40, 41, 41, $BS_CENTER)
-	GUICtrlSetFont(-1, 40, 400, 0, "MS Sans Serif")
-	GUICtrlSetTip(-1, "Press to increment clip by 1")
 
 	refreshQuickGUI()
 
@@ -328,12 +324,9 @@ Func quickGUI()
 				refreshMainGUI()
 				Return
 
-			Case $bClipMinus
-				moveClipIndex(-1)
-
-			Case $bClipPlus
-				moveClipIndex(+1)
-
+			Case $bqIndex
+				moveIndex($clipIndex)
+				
 			Case $tqClip
 				$multiClip[$clipIndex] = GUICtrlRead($tqClip)
 
@@ -342,11 +335,14 @@ Func quickGUI()
 			Case $rqPaste
 				$clipMode = $PASTE_MODE
 
-			Case $rqCycle
-				$stepMode = $ACTIVE
-
-			Case $rqSelection
-				$stepMode = $UNACTIVE
+			Case $bqStep
+				quickSwitch($stepMode, $bqStep)
+			
+			Case $bqSwitch
+				quickSwitch($switchMode, $bqSwitch)
+				
+			Case $bqSwitchIndex
+				moveIndex($switchIndex)
 		EndSwitch
 	WEnd
 
@@ -390,7 +386,7 @@ Func hot_selectClip1()
 		If BitAND(WinGetState("MultiClip -Clipboard Manager"), $WIN_STATE_VISIBLE) Then
 			GUICtrlSetState($rClip[$clipIndex], $GUI_CHECKED)
 		Else
-			GUICtrlSetData($lqClip, $clipIndex + 1)
+			GUICtrlSetData($bqIndex, $clipIndex + 1)
 			GUICtrlSetData($tqClip, $multiClip[$clipIndex])
 		EndIf
 
@@ -417,7 +413,7 @@ Func hot_selectClip2()
 		If BitAND(WinGetState("MultiClip -Clipboard Manager"), $WIN_STATE_VISIBLE) Then
 			GUICtrlSetState($rClip[$clipIndex], $GUI_CHECKED)
 		Else
-			GUICtrlSetData($lqClip, $clipIndex + 1)
+			GUICtrlSetData($bqIndex, $clipIndex + 1)
 			GUICtrlSetData($tqClip, $multiClip[$clipIndex])
 		EndIf
 
@@ -443,7 +439,7 @@ Func hot_selectClip3()
 		If BitAND(WinGetState("MultiClip -Clipboard Manager"), $WIN_STATE_VISIBLE) Then
 			GUICtrlSetState($rClip[$clipIndex], $GUI_CHECKED)
 		Else
-			GUICtrlSetData($lqClip, $clipIndex + 1)
+			GUICtrlSetData($bqIndex, $clipIndex + 1)
 			GUICtrlSetData($tqClip, $multiClip[$clipIndex])
 		EndIf
 
@@ -470,7 +466,7 @@ Func hot_selectClip4()
 		If BitAND(WinGetState("MultiClip -Clipboard Manager"), $WIN_STATE_VISIBLE) Then
 			GUICtrlSetState($rClip[$clipIndex], $GUI_CHECKED)
 		Else
-			GUICtrlSetData($lqClip, $clipIndex + 1)
+			GUICtrlSetData($bqIndex, $clipIndex + 1)
 			GUICtrlSetData($tqClip, $multiClip[$clipIndex])
 		EndIf
 
@@ -496,7 +492,7 @@ Func hot_selectClip5()
 		If BitAND(WinGetState("MultiClip -Clipboard Manager"), $WIN_STATE_VISIBLE) Then
 			GUICtrlSetState($rClip[$clipIndex], $GUI_CHECKED)
 		Else
-			GUICtrlSetData($lqClip, $clipIndex + 1)
+			GUICtrlSetData($bqIndex, $clipIndex + 1)
 			GUICtrlSetData($tqClip, $multiClip[$clipIndex])
 		EndIf
 
@@ -521,7 +517,7 @@ Func hot_copyPasteMode()
 		If BitAND(WinGetState("MultiClip -Clipboard Manager"), $WIN_STATE_VISIBLE) Then
 			GUICtrlSetState($rPaste, $GUI_CHECKED)
 		Else
-			GUICtrlSetState($rqPaste, $GUI_CHECKED)
+			GUICtrlSetData($rqPaste, $GUI_CHECKED)
 		EndIf
 
 	Else
@@ -547,9 +543,9 @@ Func refreshMainGUI()
 	EndIf
 
 	If ($stepMode = $ACTIVE) Then
-		GUICtrlSetState($rCycle, $GUI_CHECKED)
+		GUICtrlSetState($rStepOn, $GUI_CHECKED)
 	Else
-		GUICtrlSetState($rSelection, $GUI_CHECKED)
+		GUICtrlSetState($rStepOff, $GUI_CHECKED)
 	EndIf
 
 	For $i = 0 To 4 Step +1
@@ -569,15 +565,35 @@ Func refreshQuickGUI()
 	EndIf
 
 	If ($stepMode = $ACTIVE) Then
-		GUICtrlSetState($rqCycle, $GUI_CHECKED)
+		GUICtrlSetData($bqStep, "ON")
 	Else
-		GUICtrlSetState($rqSelection, $GUI_CHECKED)
+		GUICtrlSetData($bqStep, "OFF")
 	EndIf
 
-	GUICtrlSetData($lqClip, $clipIndex + 1)
+	If ($switchMode = $ACTIVE) Then
+		GUICtrlSetData($bqSwitch, "ON")
+	Else
+		GUICtrlSetData($bqSwitch, "OFF")
+	EndIf
+	
+	GUICtrlSetData($bqSwitchIndex, $switchIndex + 1)
+	
+	GUICtrlSetData($bqIndex, $clipIndex + 1)
 	GUICtrlSetData($tqClip, $multiClip[$clipIndex])
 
 EndFunc   ;==>refreshQuickGUI
+
+Func quickSwitch(ByRef $mode, ByRef $buttionID)
+	
+	If ($mode= $ACTIVE) Then
+		$mode = $UNACTIVE
+		GUICtrlSetData($buttonID, "OFF")
+	Else
+		$mode = $ACTIVE
+		GUICtrlSetData($buttonID, "ON")
+	EndIf
+	
+EndFunc   ;==>stepModeSwitch
 
 Func copy()
 
@@ -591,16 +607,18 @@ Func copy()
 		GUICtrlSetState($rClip[$clipIndex], $GUI_CHECKED)
 		GUICtrlSetData($tClip[$clipIndex], $multiClip[$clipIndex])
 	Else
-		GUICtrlSetData($lqClip, $clipIndex + 1)
+		GUICtrlSetData($bqIndex, $clipIndex + 1)
 		GUICtrlSetData($tqClip, $multiClip[$clipIndex])
 	EndIf
 
 EndFunc   ;==>copy
 
-Func copyStep() ;INSERT with SCROLLOCK off
+Func copyStep() 
 
 	copy()
-	moveClipIndex(+1)
+	If (moveClipIndex() = $switchIndex && $switchMode = $ACTIVE) Then
+		hot_copyPasteMode()
+	EndIf
 
 EndFunc   ;==>copyStep
 
@@ -615,26 +633,26 @@ Func paste()
 
 EndFunc   ;==>paste
 
-Func pasteStep() ;INSERT with SCROLLOCK on
+Func pasteStep() 
 
 	paste()
-	moveClipIndex(+1)
+	If (moveClipIndex() = $switchIndex && $switchMode = $ACTIVE) Then
+		hot_copyPasteMode()
+	EndIf
 
 EndFunc   ;==>pasteStep
 
-Func moveClipIndex($step)
+Func moveClipIndex()
 
-	If ($clipIndex + 1 = $CLIPSIZE And $step = +1) Then
+	If ($clipIndex + 1 = $CLIPSIZE) Then
 		$clipIndex = 0
-	ElseIf ($clipIndex - 1 = -1 And $step = -1) Then
-		$clipIndex = 4
 	Else
-		$clipIndex += $step
+		$clipIndex += 1
 	EndIf
 
 	If ($multiClipState[$clipIndex] = $UNACTIVE) Then
 		If (isActiveClipboard()) Then
-			moveClipIndex($step)
+			moveClipIndex()
 		Else
 			MsgBox(0, "Unactive Clipboard", "Caution: all clips are unactive!")
 		EndIf
@@ -644,7 +662,7 @@ Func moveClipIndex($step)
 	If BitAND(WinGetState("MultiClip -Clipboard Manager"), $WIN_STATE_VISIBLE) Then
 		GUICtrlSetState($rClip[$clipIndex], $GUI_CHECKED)
 	Else
-		GUICtrlSetData($lqClip, $clipIndex + 1)
+		GUICtrlSetData($bqIndex, $clipIndex + 1)
 		GUICtrlSetData($tqClip, $multiClip[$clipIndex])
 	EndIf
 
