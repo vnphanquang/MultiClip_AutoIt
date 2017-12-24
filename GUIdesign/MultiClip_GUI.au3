@@ -126,12 +126,27 @@ Func mainGUI()
 	GUICtrlCreateGroup("", -99, -99, 1, 1)
 
 	GUICtrlCreateGroup("", -99, -99, 1, 1)
-	Global $modeGroup = GUICtrlCreateGroup("", 7, 24, 345, 57, BitOR($GUI_SS_DEFAULT_GROUP, $BS_CENTER))
-	Global $rStepOn = GUICtrlCreateRadio("ON", 47, 48, 113, 17, BitOR($GUI_SS_DEFAULT_RADIO, $BS_PUSHLIKE))
+	GUIStartGroup()
+	Global $stepGroup = GUICtrlCreateGroup("Settings", 7, 24, 345, 105, BitOR($GUI_SS_DEFAULT_GROUP, $BS_CENTER))
+	Global $rStepOn = GUICtrlCreateRadio("ON", 111, 48, 57, 17, BitOR($GUI_SS_DEFAULT_RADIO, $BS_PUSHLIKE))
 	GUICtrlSetState(-1, $GUI_CHECKED)
-	Global $rStepOff = GUICtrlCreateRadio("OFF", 199, 48, 113, 17, BitOR($GUI_SS_DEFAULT_RADIO, $BS_PUSHLIKE))
+	Global $rStepOff = GUICtrlCreateRadio("OFF", 183, 48, 57, 17, BitOR($GUI_SS_DEFAULT_RADIO, $BS_PUSHLIKE))
+	Global $bInstructions = GUICtrlCreateButton("Instructions", 255, 48, 75, 17)
+	Global $lStep = GUICtrlCreateLabel("Cycle Mode:", 23, 48, 74, 17, BitOR($SS_CENTER, $SS_CENTERIMAGE))
+	GUICtrlSetFont(-1, 8, 800, 0, "MS Sans Serif")
+
+	GUIStartGroup()
+	Global $bSwitch = GUICtrlCreateButton("X", 295, 88, 35, 17)
+	GUICtrlSetState(-1, $GUI_DISABLE)
+	Global $lSwitch = GUICtrlCreateLabel("Switch Mode:", 23, 88, 81, 17, BitOR($SS_CENTER, $SS_CENTERIMAGE))
+	GUICtrlSetFont(-1, 8, 800, 0, "MS Sans Serif")
+	Global $rSwitchOn = GUICtrlCreateRadio("ON", 111, 88, 57, 17, BitOR($GUI_SS_DEFAULT_RADIO, $BS_PUSHLIKE))
+	Global $rSwitchOff = GUICtrlCreateRadio("OFF", 183, 88, 57, 17, BitOR($GUI_SS_DEFAULT_RADIO, $BS_PUSHLIKE))
+	GUICtrlSetState(-1, $GUI_CHECKED)
+	Global $lSwitch = GUICtrlCreateLabel("Index:", 255, 88, 39, 17, BitOR($SS_CENTER, $SS_CENTERIMAGE))
+	GUICtrlSetFont(-1, 8, 800, 0, "MS Sans Serif")
 	GUICtrlCreateGroup("", -99, -99, 1, 1)
-	Global $bInstructions = GUICtrlCreateButton("Instructions", 138, 96, 83, 25)
+
 	GUISetState(@SW_SHOW)
 
 	#EndRegion ### END Koda GUI section ###
@@ -156,11 +171,9 @@ Func mainGUI()
 
 			Case $rStepOn
 				$stepMode = $ACTIVE
-				GUICtrlSetState($rStepOn, $GUI_CHECKED)
-				
+
 			Case $rStepOff
 				$stepMode = $UNACTIVE
-				GUICtrlSetState($rStepOff, $GUI_CHECKED)
 
 			Case $bInstructions
 				If ($stepMode = $ACTIVE) Then
@@ -168,6 +181,18 @@ Func mainGUI()
 				Else
 					MsgBox(0, "Instructions (Cycle OFF)", $STEP_OFF_INSTRUCTION)
 				EndIf
+
+			Case $rSwitchOn
+				$switchMode = $ACTIVE
+				GUICtrlSetState($bSwitch, $GUI_ENABLE)
+
+			Case $rSwitchOff
+				$switchMode = $UNACTIVE
+				GUICtrlSetState($bSwitch, $GUI_DISABLE)
+
+			Case $bSwitch
+				moveIndex($switchIndex, False)
+				GUICtrlSetData($bSwitch, $switchIndex + 1)
 
 			Case $rCopy
 				$clipMode = $COPY_MODE
@@ -207,7 +232,7 @@ Func mainGUI()
 				Else
 					$multiClipState[0] = $UNACTIVE
 					If ($clipIndex = 0) Then
-						moveIndex()
+						moveIndex($clipIndex, True)
 					EndIf
 				EndIf
 			Case $cClip[1]
@@ -216,7 +241,7 @@ Func mainGUI()
 				Else
 					$multiClipState[1] = $UNACTIVE
 					If ($clipIndex = 1) Then
-						moveClipIndex()
+						moveIndex($clipIndex, True)
 					EndIf
 				EndIf
 			Case $cClip[2]
@@ -225,7 +250,7 @@ Func mainGUI()
 				Else
 					$multiClipState[2] = $UNACTIVE
 					If ($clipIndex = 2) Then
-						moveClipIndex()
+						moveIndex($clipIndex, True)
 					EndIf
 				EndIf
 			Case $cClip[3]
@@ -234,7 +259,7 @@ Func mainGUI()
 				Else
 					$multiClipState[3] = $UNACTIVE
 					If ($clipIndex = 3) Then
-						moveClipIndex()
+						moveIndex($clipIndex, True)
 					EndIf
 				EndIf
 			Case $cClip[4]
@@ -243,7 +268,7 @@ Func mainGUI()
 				Else
 					$multiClipState[4] = $UNACTIVE
 					If ($clipIndex = 4) Then
-						moveClipIndex()
+						moveIndex($clipIndex, True)
 					EndIf
 				EndIf
 
@@ -275,7 +300,7 @@ Func quickGUI()
 	Opt("TrayMenuMode", 1)
 
 	#Region ### START Koda GUI section ### Form=c:\users\zelda\desktop\multiclip\quickboard.kxf
-	Local $QuickBoard = GUICreate("QuickBoard", 231, 105, -1, -1, BitOR($GUI_SS_DEFAULT_GUI,$WS_SIZEBOX,$WS_THICKFRAME), -1, $Main)
+	Local $QuickBoard = GUICreate("QuickBoard", 231, 105, -1, -1, BitOR($GUI_SS_DEFAULT_GUI, $WS_SIZEBOX, $WS_THICKFRAME), -1, $Main)
 
 	Local $mOptions = GUICtrlCreateMenu("&Options")
 	Local $smStayOnTop = GUICtrlCreateMenuItem("&Stay On Top", $mOptions)
@@ -283,20 +308,37 @@ Func quickGUI()
 	Local $mHelp = GUICtrlCreateMenu("&Help")
 	Local $smAbout = GUICtrlCreateMenuItem("&About", $mHelp)
 
-	Global $tqClip = GUICtrlCreateEdit("", 80, 8, 139, 17, BitOR($ES_AUTOVSCROLL, $ES_AUTOHSCROLL, $ES_WANTRETURN))
+	Global $tqClip = GUICtrlCreateEdit("", 64, 0, 147, 25, BitOR($ES_AUTOVSCROLL, $ES_AUTOHSCROLL, $ES_WANTRETURN))
+	GUICtrlSetTip(-1, "Edit to modify clip content!")
 	GUICtrlSetFont(-1, 8, 400, "MS Sans Serif")
 
-	Local $gCycle = GUICtrlCreateGroup("Cycle", 56, 32, 65, 49)
-	
-	GUICtrlCreateGroup("", -99, -99, 1, 1)
-
-	Local $gMode = GUICtrlCreateGroup("Mode", 152, 31, 65, 49)
-	Global $rqCopy = GUICtrlCreateRadio("C", 160, 47, 25, 25, BitOR($GUI_SS_DEFAULT_RADIO, $BS_PUSHLIKE))
-	Global $rqPaste = GUICtrlCreateRadio("P", 184, 47, 25, 25, BitOR($GUI_SS_DEFAULT_RADIO, $BS_PUSHLIKE))
-	GUICtrlCreateGroup("", -99, -99, 1, 1)
-
-	Global $lqClip = GUICtrlCreateLabel("1", 52, 5, 25, 25, BitOR($SS_CENTER, $SS_CENTERIMAGE), $WS_EX_STATICEDGE)
+	Global $bqIndex = GUICtrlCreateButton("1", 24, 0, 25, 25)
 	GUICtrlSetFont(-1, 10, 400, 0, "MS Sans Serif")
+	GUICtrlSetTip(-1, "Click to increment index!")
+
+
+	Local $gSwitch = GUICtrlCreateGroup("Switch", 8, 32, 81, 49)
+	Global $rqSwitch = GUICtrlCreateRadio("OFF", 16, 48, 33, 25, BitOR($GUI_SS_DEFAULT_RADIO, $BS_CENTER, $BS_PUSHLIKE))
+	GUICtrlSetTip(-1, "Click to toggle Switch Mode")
+	Global $bqSwitch = GUICtrlCreateButton("X", 56, 48, 25, 25)
+	GUICtrlSetState(-1, $GUI_DISABLE)
+	GUICtrlSetTip(-1, "Click to increment index to switch")
+	GUICtrlCreateGroup("", -99, -99, 1, 1)
+
+
+	Local $gMode = GUICtrlCreateGroup("Mode", 160, 32, 65, 49)
+	Global $rqCopy = GUICtrlCreateRadio("C", 168, 48, 25, 25, BitOR($GUI_SS_DEFAULT_RADIO, $BS_PUSHLIKE))
+	GUICtrlSetState(-1, $GUI_CHECKED)
+	GUICtrlSetTip(-1, "Click to turn on Copy Mode")
+	Global $rqPaste = GUICtrlCreateRadio("P", 192, 48, 25, 25, BitOR($GUI_SS_DEFAULT_RADIO, $BS_PUSHLIKE))
+	GUICtrlSetTip(-1, "Click to turn on Paste Mode")
+	GUICtrlCreateGroup("", -99, -99, 1, 1)
+
+	Local $gStep = GUICtrlCreateGroup("Cycle", 96, 32, 57, 49)
+	Global $rqStep = GUICtrlCreateRadio("ON", 104, 48, 41, 25, BitOR($GUI_SS_DEFAULT_RADIO, $BS_CENTER, $BS_PUSHLIKE))
+	GUICtrlSetState(-1, $GUI_CHECKED)
+	GUICtrlSetTip(-1, "Click to toggle Cycle Mode")
+	GUICtrlCreateGroup("", -99, -99, 1, 1)
 
 	refreshQuickGUI()
 
@@ -325,8 +367,8 @@ Func quickGUI()
 				Return
 
 			Case $bqIndex
-				moveIndex($clipIndex)
-				
+				moveIndex($clipIndex, True)
+
 			Case $tqClip
 				$multiClip[$clipIndex] = GUICtrlRead($tqClip)
 
@@ -335,14 +377,20 @@ Func quickGUI()
 			Case $rqPaste
 				$clipMode = $PASTE_MODE
 
-			Case $bqStep
-				quickSwitch($stepMode, $bqStep)
-			
+			Case $rqStep
+				quickSwitch($stepMode, $rqStep)
+
+			Case $rqSwitch
+				quickSwitch($switchMode, $rqSwitch)
+				If ($switchMode = $ACTIVE) Then
+					GUICtrlSetState($bqSwitch, $GUI_ENABLE)
+				Else
+					GUICtrlSetState($bqSwitch, $GUI_DISABLE)
+				EndIf
+
 			Case $bqSwitch
-				quickSwitch($switchMode, $bqSwitch)
-				
-			Case $bqSwitchIndex
-				moveIndex($switchIndex)
+				moveIndex($switchIndex, False)
+				GUICtrlSetData($bqSwitch, $switchIndex + 1)
 		EndSwitch
 	WEnd
 
@@ -565,35 +613,41 @@ Func refreshQuickGUI()
 	EndIf
 
 	If ($stepMode = $ACTIVE) Then
-		GUICtrlSetData($bqStep, "ON")
+		GUICtrlSetData($rqStep, "ON")
+		GUICtrlSetState($rqStep, $GUI_CHECKED)
 	Else
-		GUICtrlSetData($bqStep, "OFF")
+		GUICtrlSetData($rqStep, "OFF")
+		GUICtrlSetState($rqStep, $GUI_UNCHECKED)
 	EndIf
 
 	If ($switchMode = $ACTIVE) Then
-		GUICtrlSetData($bqSwitch, "ON")
+		GUICtrlSetData($rqSwitch, "ON")
+		GUICtrlSetState($rqSwitch, $GUI_CHECKED)
 	Else
-		GUICtrlSetData($bqSwitch, "OFF")
+		GUICtrlSetData($rqSwitch, "OFF")
+		GUICtrlSetState($rqSwitch, $GUI_UNCHECKED)
 	EndIf
-	
-	GUICtrlSetData($bqSwitchIndex, $switchIndex + 1)
-	
+
+	GUICtrlSetData($bqSwitch, $switchIndex + 1)
+
 	GUICtrlSetData($bqIndex, $clipIndex + 1)
 	GUICtrlSetData($tqClip, $multiClip[$clipIndex])
 
 EndFunc   ;==>refreshQuickGUI
 
-Func quickSwitch(ByRef $mode, ByRef $buttionID)
-	
-	If ($mode= $ACTIVE) Then
+Func quickSwitch(ByRef $mode, ByRef $buttonID)
+
+	If ($mode = $ACTIVE) Then
 		$mode = $UNACTIVE
 		GUICtrlSetData($buttonID, "OFF")
+		GUICtrlSetState($buttonID, $GUI_UNCHECKED)
 	Else
 		$mode = $ACTIVE
 		GUICtrlSetData($buttonID, "ON")
+		GUICtrlSetState($buttonID, $GUI_CHECKED)
 	EndIf
-	
-EndFunc   ;==>stepModeSwitch
+
+EndFunc   ;==>quickSwitch
 
 Func copy()
 
@@ -613,10 +667,10 @@ Func copy()
 
 EndFunc   ;==>copy
 
-Func copyStep() 
+Func copyStep()
 
 	copy()
-	If (moveClipIndex() = $switchIndex && $switchMode = $ACTIVE) Then
+	If (moveIndex($clipIndex, True) = $switchIndex And $switchMode = $ACTIVE) Then
 		hot_copyPasteMode()
 	EndIf
 
@@ -633,42 +687,44 @@ Func paste()
 
 EndFunc   ;==>paste
 
-Func pasteStep() 
+Func pasteStep()
 
 	paste()
-	If (moveClipIndex() = $switchIndex && $switchMode = $ACTIVE) Then
+	If (moveIndex($clipIndex, True) = $switchIndex And $switchMode = $ACTIVE) Then
 		hot_copyPasteMode()
 	EndIf
 
 EndFunc   ;==>pasteStep
 
-Func moveClipIndex()
+Func moveIndex(ByRef $indexToMove, $updateGUI)
 
-	If ($clipIndex + 1 = $CLIPSIZE) Then
-		$clipIndex = 0
+	If ($indexToMove + 1 = $CLIPSIZE) Then
+		$indexToMove = 0
 	Else
-		$clipIndex += 1
+		$indexToMove += 1
 	EndIf
 
-	If ($multiClipState[$clipIndex] = $UNACTIVE) Then
+	If ($multiClipState[$indexToMove] = $UNACTIVE) Then
 		If (isActiveClipboard()) Then
-			moveClipIndex()
+			moveIndex($indexToMove, $updateGUI)
 		Else
 			MsgBox(0, "Unactive Clipboard", "Caution: all clips are unactive!")
 		EndIf
 
 	EndIf
 
-	If BitAND(WinGetState("MultiClip -Clipboard Manager"), $WIN_STATE_VISIBLE) Then
-		GUICtrlSetState($rClip[$clipIndex], $GUI_CHECKED)
-	Else
-		GUICtrlSetData($bqIndex, $clipIndex + 1)
-		GUICtrlSetData($tqClip, $multiClip[$clipIndex])
+	If ($updateGUI = True) Then
+		If BitAND(WinGetState("MultiClip -Clipboard Manager"), $WIN_STATE_VISIBLE) Then
+			GUICtrlSetState($rClip[$indexToMove], $GUI_CHECKED)
+		Else
+			GUICtrlSetData($bqIndex, $indexToMove + 1)
+			GUICtrlSetData($tqClip, $multiClip[$indexToMove])
+		EndIf
 	EndIf
 
-	Return $clipIndex
+	Return $indexToMove
 
-EndFunc   ;==>moveClipIndex
+EndFunc   ;==>moveIndex
 
 Func isActiveClipboard()
 
