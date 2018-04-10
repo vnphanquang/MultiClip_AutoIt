@@ -7,10 +7,10 @@ Features:
 - MultiClip allows circling through specified "clips" for better data entry automation.
 
 Updates:
-(2018.12.26) Source codes & Prototypes uploaded. Complete deployed package uploaded and available for download: 
+- (2018.12.26) Source codes & Prototypes uploaded. Complete deployed package uploaded and available for download: 
 MultiClip.rar -- v1.0 -- portable, 64bit compatible.
 
 
 Useful links:
-AutoIt programming language: https://www.autoitscript.com/site/
-Online AutoClip compiler: http://atstools.net/Autoit/
+- AutoIt programming language: https://www.autoitscript.com/site/
+- Online AutoClip compiler: http://atstools.net/Autoit/
