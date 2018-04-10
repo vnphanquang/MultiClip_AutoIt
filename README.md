@@ -13,4 +13,4 @@ MultiClip.rar -- v1.0 -- portable, 64bit compatible: https://github.com/Fariusdn
 
 Useful links:
 - AutoIt programming language: https://www.autoitscript.com/site/
-- Online AutoClip compiler: http://atstools.net/Autoit/
+- Online AutoIt compiler: http://atstools.net/Autoit/
