@@ -8,7 +8,7 @@ Features:
 
 Updates:
 - (2018.12.26) Source codes & Prototypes uploaded. Complete deployed package uploaded and available for download: 
-MultiClip.rar -- v1.0 -- portable, 64bit compatible.
+MultiClip.rar -- v1.0 -- portable, 64bit compatible: https://github.com/Fariusdnoyeb/20171222_MultiClip_AutoIt/blob/master/MultiClip.rar
 
 
 Useful links:
