@@ -8,8 +8,9 @@ Features:
 - MultiClip allows circling through specified "clips" for better data entry automation.
 
 Updates:
-- (2018.12.26) Source codes & Prototypes uploaded. Complete deployed package uploaded and available for download: 
-MultiClip.rar -- v1.0 -- portable, 64bit compatible: https://github.com/Fariusdnoyeb/20171222_MultiClip_AutoIt/blob/master/MultiClip.rar
+- (2017.12.26) Source codes & Prototypes uploaded. Complete deployed package uploaded and available for download.
+
+- (2018.12.28) Contact info and links are updated. MultiClip 1.1 successfully compiled, available for download.
 
 
 Useful links:
