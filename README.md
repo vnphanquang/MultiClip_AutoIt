@@ -1,4 +1,4 @@
-# 20171222_MultiClip_AutoIt
+MultiClip_AutoIt
 An AutoIt Windows application that allows multiple copies/pastes with a simple GUI.
 
 Features:
